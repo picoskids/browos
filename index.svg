@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:h="http://www.w3.org/1999/xhtml" width="100%" height="100%" viewBox="0 0 112 112" style="background:#000">
+  <title>BrowOS</title>
+  <!-- Shown as a still image (e.g. in an <img>), or before the script runs: the boot logo. -->
+  <rect width="112" height="112" fill="#000"/>
+  <rect x="24" y="24" width="64" height="64" rx="12" fill="none" stroke="#fff" stroke-width="8" transform="rotate(45 56 56)"/>
+  <rect x="44" y="44" width="24" height="24" rx="6" fill="#fff" transform="rotate(45 56 56)"/>
+  <script><![CDATA[
+(function shim(page) {
+  /* eslint-disable */
+  var NS = 'http://www.w3.org/1999/xhtml'
+  var D = Document.prototype
+  var mk = D.createElement
+  D.createElement = function (tag, opts) {
+    return this.contentType === 'image/svg+xml' ? this.createElementNS(NS, String(tag).toLowerCase(), opts) : mk.call(this, tag, opts)
+  }
+  // innerHTML in an XML document would use the strict XML parser (`<br>` throws, and Firefox logs every failure),
+  // so HTML elements here always go through the forgiving HTML parser.
+  var desc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML')
+  Object.defineProperty(Element.prototype, 'innerHTML', {
+    configurable: true,
+    enumerable: desc.enumerable,
+    get: desc.get,
+    set: function (v) {
+      if (this.ownerDocument.contentType !== 'image/svg+xml' || this.namespaceURI !== NS) return desc.set.call(this, v)
+      var body = new DOMParser().parseFromString('<!doctype html><body>' + v, 'text/html').body
+      while (this.firstChild) this.removeChild(this.firstChild)
+      for (var n = body.firstChild; n; n = n.nextSibling) this.appendChild(this.ownerDocument.importNode(n, true))
+    },
+  })
+
+  var parsed = new DOMParser().parseFromString(page, 'text/html')
+  var root = document.importNode(parsed.documentElement, true)
+  // Scripts copied from a DOMParser document never run; swap each for a fresh element, in document order.
+  var scripts = Array.prototype.slice.call(root.querySelectorAll('script'))
+  var holders = scripts.map(function (s) { var c = document.createComment('script'); s.parentNode.replaceChild(c, s); return c })
+  document.replaceChild(root, document.documentElement)
+  scripts.forEach(function (old, i) {
+    // Safari (WebKit) never runs <script type="module"> in an XML document; dynamic import() works everywhere.
+    if (old.getAttribute('type') === 'module') {
+      var src = old.getAttribute('src')
+      var url = src ? new URL(src, document.baseURI).href : URL.createObjectURL(new Blob([old.textContent], { type: 'text/javascript' }))
+      holders[i].parentNode.removeChild(holders[i])
+      import(url).catch(function (e) { console.error('BrowOS failed to start', e) })
+      return
+    }
+    var s = document.createElementNS(NS, 'script')
+    for (var j = 0; j < old.attributes.length; j++) s.setAttribute(old.attributes[j].name, old.attributes[j].value)
+    s.textContent = old.textContent
+    if (s.src) s.async = false
+    holders[i].parentNode.replaceChild(s, holders[i])
+  })
+})("\u003c!doctype html>\n\u003chtml lang=\"en\">\n  \u003chead>\n    \u003cscript>\n      // The S3 website endpoint is plain http, where browsers disable service workers, so the proxy (Movies, Safari) can't start.\n      if (location.protocol === 'http:' && /\\.s3-website[.-]/.test(location.hostname)) location.replace('https://dqfl8ajrzillq.cloudfront.net' + location.pathname + location.search + location.hash)\n    \u003c/script>\n    \u003cmeta charset=\"UTF-8\" />\n    \u003cmeta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\" />\n    \u003cmeta name=\"color-scheme\" content=\"light dark\" />\n    \u003cmeta name=\"description\" content=\"BrowOS, a browser that runs inside a web page.\" />\n    \u003cmeta name=\"theme-color\" content=\"#000000\" />\n    \u003cmeta property=\"og:type\" content=\"website\" />\n    \u003cmeta property=\"og:title\" content=\"BrowOS\" />\n    \u003cmeta property=\"og:description\" content=\"BrowOS, a browser that runs inside a web page.\" />\n    \u003cmeta property=\"og:image\" content=\"./og.png\" />\n    \u003cmeta name=\"robots\" content=\"index, follow\" />\n    \u003clink rel=\"icon\" type=\"image/svg+xml\" href=\"./favicon.svg\" />\n    \u003clink rel=\"apple-touch-icon\" href=\"./apple-touch-icon.png\" />\n    \u003clink rel=\"manifest\" href=\"./manifest.webmanifest\" />\n    \u003cmeta name=\"mobile-web-app-capable\" content=\"yes\" />\n    \u003cmeta name=\"apple-mobile-web-app-capable\" content=\"yes\" />\n    \u003cmeta name=\"apple-mobile-web-app-title\" content=\"BrowOS\" />\n    \u003cmeta name=\"apple-mobile-web-app-status-bar-style\" content=\"black-translucent\" />\n    \u003ctitle>BrowOS\u003c/title>\n    \u003cscript>\n      try {\n        var s = JSON.parse(localStorage.getItem('browos:os') || '{}');\n        var t = s.theme || 'system';\n        var dark = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);\n        document.documentElement.dataset.theme = dark ? 'dark' : 'light';\n      } catch (e) {}\n    \u003c/script>\n    \u003c!-- Boot screen: painted by the browser before any script runs, removed by src/os/boot.ts once the desktop is ready. -->\n    \u003cstyle>#boot{z-index:99999;cursor:none;-webkit-user-select:none;user-select:none;opacity:1;background:#000;place-content:center;justify-items:center;gap:52px;transition:opacity .5s cubic-bezier(.23,1,.32,1);display:grid;position:fixed;inset:0}#boot[data-done=true]{opacity:0;pointer-events:none}#boot .b-logo{width:112px;height:112px;position:relative}#boot .b-logo:before{content:\"\";border:8px solid #fff;border-radius:16px;position:absolute;inset:20px;transform:rotate(45deg)}#boot .b-logo:after{content:\"\";background:#fff;border-radius:6px;position:absolute;inset:44px;transform:rotate(45deg)}#boot .b-bar{background:#ffffff38;border-radius:3px;width:200px;height:5px;overflow:hidden}#boot .b-fill{transform-origin:0;background:#fff;border-radius:3px;width:100%;height:100%;transition:transform .6s cubic-bezier(.23,1,.32,1);transform:scaleX(.04)}@media (prefers-reduced-motion:reduce){#boot,#boot .b-fill{transition-duration:.12s}}body:has(#boot:not([data-done=true])){overflow:hidden}\u003c/style>\n    \u003cscript type=\"module\" crossorigin src=\"./assets/index-D1x-KkQX.js\">\u003c/script>\n    \u003clink rel=\"modulepreload\" crossorigin href=\"./assets/rolldown-runtime-CogR6ga-.js\">\n    \u003clink rel=\"modulepreload\" crossorigin href=\"./assets/jsx-runtime-BbGZGSgZ.js\">\n    \u003clink rel=\"stylesheet\" crossorigin href=\"./assets/index-CaLV1xIp.css\">\n  \u003c/head>\n  \u003cbody>\n    \u003cdiv id=\"boot\" role=\"progressbar\" aria-label=\"Starting BrowOS\" aria-valuemin=\"0\" aria-valuemax=\"100\">\u003cdiv class=\"b-logo\">\u003c/div>\u003cdiv class=\"b-bar\">\u003cdiv class=\"b-fill\">\u003c/div>\u003c/div>\u003c/div>\n    \u003cdiv id=\"root\">\u003c/div>\n    \u003cnoscript>BrowOS needs JavaScript to run.\u003c/noscript>\n  \u003c/body>\n\u003c/html>\n")
+]]></script>
+</svg>
