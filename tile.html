@@ -1,0 +1,22 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="robots" content="noindex"><base target="_blank">
+<style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;font:13px -apple-system,system-ui,sans-serif}</style>
+</head><body>
+<script>
+  // One Adsterra unit, framed by src/os/Ads.tsx. A real page on the site's own host, so the tag sees the actual domain
+  // (a srcdoc frame reports about:srcdoc with no hostname). ?b=<key>&w=&h= is an iframe banner, ?n=<key> a native banner.
+  (function () {
+    var q = new URLSearchParams(location.search), b = q.get('b'), n = q.get('n'), key = /^[a-f0-9]{32}$/
+    var s = document.createElement('script')
+    if (b && key.test(b)) {
+      window.atOptions = { key: b, format: 'iframe', height: +q.get('h') || 90, width: +q.get('w') || 728, params: {} }
+      s.src = 'https://bauval.org/22/' + b
+    } else if (n && key.test(n)) {
+      var c = document.createElement('div'); c.id = 'container-' + n
+      s.async = true; s.setAttribute('data-cfasync', 'false'); s.src = 'https://bauval.org/21/' + n
+      document.body.appendChild(s); document.body.appendChild(c); return
+    } else return
+    document.body.appendChild(s)
+  })()
+</script>
+</body></html>
