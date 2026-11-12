@@ -82,7 +82,7 @@ async function extension(url) {
 // /popup.js (that's what chrome-extension://<id>/popup.js becomes once the leading host is gone). Those hit the site
 // root and 403, leaving the popup blank. Map such a request back into the referring extension; if it isn't one of
 // that extension's files, fall through to the network so real site assets still load.
-const extId = (ref) => (ref.match(new RegExp('/Library/Extensions/([a-p]{32})/')) || [])[1]
+const extId = (ref) => (ref.match(/\/Library\/Extensions\/([a-p]{32})\//) || [])[1]
 addEventListener('fetch', (e) => {
   const url = new URL(e.request.url)
   const path = url.pathname
@@ -93,9 +93,6 @@ addEventListener('fetch', (e) => {
     if (id) return e.respondWith((async () => (await extFile(location.origin + EXTENSIONS + id + path)) || fetch(e.request))())
   }
   const ready = $scramjetController.shouldRoute(e)
-  // the scramjet prefix is rotated per install by src/lib/cloak.ts, so the
-  // fall-through guard widens to the whole /Library/ tree rather than the
-  // old static /Library/Safari/ name.
-  if (!ready && path.indexOf('/Library/') === -1) return
+  if (!ready && path.indexOf('/Library/Safari/') === -1) return
   e.respondWith(handle(e, ready))
 })
